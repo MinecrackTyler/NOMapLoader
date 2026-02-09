@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>NOMapLoader</AssemblyName>
-    <Description>My first plugin</Description>
+    <Description>Nuclear Option Map Loader</Description>
     <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
@@ -14,7 +14,7 @@
 
         <Exec Command="cp &quot;$(TargetPath)&quot; &quot;$(BepInExPluginsDir)/$(Product)_$(Version)$(TargetExt)&quot;" />
 
-        <Exec Command="cp &quot;$(TargetPath)&quot; &quot;$(UnityPluginsDir)/$(Product)$(TargetExt)&quot;" />
+        <!-- <Exec Command="cp &quot;$(TargetPath)&quot; &quot;$(UnityPluginsDir)/$(Product)$(TargetExt)&quot;" /> -->
     </Target>
 
 
@@ -27,5 +27,17 @@
   
   <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(GameManagedDir)\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="UniTask">
+      <HintPath>$(GameManagedDir)\UniTask.dll</HintPath>
+    </Reference>
+    <Reference Include="Mirage">
+      <HintPath>$(GameManagedDir)\Mirage.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>
