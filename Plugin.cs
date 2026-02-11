@@ -81,6 +81,7 @@ namespace NOMapLoader
 
             foreach (AssetBundle bundle in BlueprinterHelper.GetExternalMapBundles())
             {
+                Log.LogInfo("Detected external bundle: " + bundle.name);
                 list.Add(bundle);
             }
 
@@ -101,7 +102,7 @@ namespace NOMapLoader
             var mapBundles = Directory.GetFiles(pluginDir, "*")
                 .Where(f => f.Contains("map_")).ToList();
             
-            Log.LogInfo("Detected Bundles:");
+            Log.LogInfo("Detected local Bundles:");
             foreach (string s in mapBundles)
             {
                 Log.LogInfo(Path.GetFileName(s));
@@ -117,7 +118,7 @@ namespace NOMapLoader
             var externalBundles = await ScanExternalBundles();
             var localBundles = mapBundles.Except(excludeBundles).ToList();
             
-            Log.LogInfo($"Found {mapBundles.Count} map bundles");
+            Log.LogInfo($"Found {localBundles.Count + externalBundles.Count} map bundles");
             Log.LogInfo($"Details: {externalBundles.Count} external bundles");
             Log.LogInfo($"Details: {localBundles.Count} local bundles");
 
