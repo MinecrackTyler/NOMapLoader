@@ -8,6 +8,10 @@
 
 ![mapPopup.png](mapPopup.png)
 
+## Usage:
+ Install like any other BepInEx mod (drop into plugins folder)<br>
+ Ensure downloaded map bundles if independent are in the same folder as the dll. Blueprinter bundles will be scanned automatically.
+
 
 ## Creating Custom Maps:
  Creating custom maps requires a unity project setup in the following ways:
@@ -28,6 +32,10 @@
    - Ocean Basecolor, Depthmap, Terrain Colormap, Map image
    - Music (Issue: See above)
    - ...
+ - TerrainScatter component
+   - MapSettings reference
+   - Datum reference (root transform of map)
+   - Nothing else is required, will work fine without it, not sure how scatter data works yet anyway.
 
  More complex maps can make use of components such as MapBuilding(MapBuildingSet) and Buildings for things such as destructible cities, hangars, etc...<br>
  Maybe guide soon?
