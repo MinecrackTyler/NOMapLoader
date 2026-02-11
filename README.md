@@ -1,0 +1,33 @@
+# NOMapLoader: Nuclear Option Map Loader
+ External map loader for Nuclear Option, supporting both independent and blueprinter loaded maps (for replacing assets).<br>
+ Supports a theoretically infinite amount of custom maps by replacing the new map popup (see below).<br>
+ 
+ Current known issues:
+ - Custom maps still require a reference to the FactionHQ of the various factions in order to setup music. This currently requires blueprinter, which means independent maps will not support music currently.
+ - ...
+
+![mapPopup.png](mapPopup.png)
+
+
+## Creating Custom Maps:
+ Creating custom maps requires a unity project setup in the following ways:
+ - Unity 2022.3.62f2 (or current Nuclear Option unity version if this changes)
+ - Reference to Nuclear Option assemblies (Assembly-CSharp.dll)
+
+### Basic Map Structure:
+ A basic map only requires the following:
+ - Prefab Containing the following
+ - NetworkMap component
+ - MapSettings component
+   - Reference to NetworkMap
+   - Correct map size
+   - Grid size (reference: heartland is 16x16)
+   - Optional OffsetX, OffsetY (not sure of use) and Latitude
+   - Road Networks and Sea Lanes if required
+   - Reflection probe point (for static reflections I believe)
+   - Ocean Basecolor, Depthmap, Terrain Colormap, Map image
+   - Music (Issue: See above)
+   - ...
+
+ More complex maps can make use of components such as MapBuilding(MapBuildingSet) and Buildings for things such as destructible cities, hangars, etc...<br>
+ Maybe guide soon?
