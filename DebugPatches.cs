@@ -5,7 +5,7 @@ namespace NOMapLoader;
 
 public class DebugPatches
 {
-	[HarmonyPatch(typeof(ClientObjectManager), "ThrowIfExists")]
+	/*[HarmonyPatch(typeof(ClientObjectManager), "ThrowIfExists")]
 	static class ClientObjectManagerPatch
 	{
 		static void Prefix(ClientObjectManager __instance, int prefabHash, Mirage.NetworkIdentity newPrefab)
@@ -21,5 +21,5 @@ public class DebugPatches
 		{
 			Plugin.Log.LogInfo($"Details: {__instance.Identity} | {__instance.definition} | {__instance.MapUniqueName}");
 		}
-	}
+	}*/
 }
