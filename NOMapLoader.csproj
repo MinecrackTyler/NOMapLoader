@@ -39,5 +39,8 @@
     <Reference Include="Mirage">
       <HintPath>$(GameManagedDir)\Mirage.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GameManagedDir)\UnityEngine.UI.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>
