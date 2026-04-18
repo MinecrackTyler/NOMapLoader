@@ -10,16 +10,16 @@ using UnityEngine.UI;
 
 namespace NOMapLoader;
 
-[HarmonyPatch(typeof(MissionEditorNewMenu), "Awake")]
+[HarmonyPatch(typeof(MissionEditorNewMenuV2), "Awake")]
 public class PopupMenusPatch
 {
 	[HarmonyPrefix]
-	static void Prefix(MissionEditorNewMenu __instance)
+	static void Prefix(MissionEditorNewMenuV2 __instance)
 	{
 		Plugin.Log.LogInfo("Attempting to add custom map selectors");
 		
 		var root = __instance.transform;
-		var mapOptions = root.Find("Body")?.Find("Map options");
+		var mapOptions = root.Find("3-panel-layout")?.Find("Center")?.Find("Map options");
 		if (mapOptions == null)
 		{
 			Plugin.Log.LogError("Map options not found, aborting!");
@@ -52,13 +52,8 @@ public class PopupMenusPatch
 			newButtons.Add(newButton);
 		}
 		
-		
-		
-
-		FieldInfo mapButtonsField = AccessTools.Field(typeof(MissionEditorNewMenu), "mapButtons");
-		NewMissionMapButton[] mapButtons = mapButtonsField.GetValue(__instance) as NewMissionMapButton[];
-		
-		mapButtonsField.SetValue(__instance, mapButtons.AddRangeToArray(newButtons.ToArray()));
+		NewMissionMapButton[] mapButtons = __instance.mapButtons;
+		__instance.mapButtons = mapButtons.AddRangeToArray(newButtons.ToArray());
 		
 		Plugin.Log.LogInfo($"Added {newButtons.Count} new map buttons");
 	}
@@ -80,7 +75,7 @@ public class PopupMenusPatch
 		scrollRectTransform.offsetMin = Vector2.zero;
 		scrollRectTransform.offsetMax = Vector3.zero;
 		scrollRectTransform.anchoredPosition =  new  Vector2(270f, -90f);
-		scrollRectTransform.sizeDelta = new  Vector2(540f, 220f);
+		scrollRectTransform.sizeDelta = new  Vector2(440f, 220f);
 		
 		var viewportGO = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
 		viewportGO.transform.SetParent(scrollRectGO.transform, false);
