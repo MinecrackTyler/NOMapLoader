@@ -16,20 +16,20 @@ public class PopupMenusPatch
 	[HarmonyPrefix]
 	static void Prefix(MissionEditorNewMenuV2 __instance)
 	{
-		Plugin.Log.LogInfo("Attempting to add custom map selectors");
+		Plugin.Logger.LogInfo("Attempting to add custom map selectors");
 		
 		var root = __instance.transform;
 		var mapOptions = root.Find("3-panel-layout")?.Find("Center")?.Find("Map options");
 		if (mapOptions == null)
 		{
-			Plugin.Log.LogError("Map options not found, aborting!");
+			Plugin.Logger.LogError("Map options not found, aborting!");
 			return;
 		}
 		
 		var existingButtons = mapOptions.GetComponentsInChildren<NewMissionMapButton>();
 		if (existingButtons.Length <= 0)
 		{
-			Plugin.Log.LogInfo("No existing map selectors found, aborting!");
+			Plugin.Logger.LogInfo("No existing map selectors found, aborting!");
 			return;
 		}
 
@@ -55,7 +55,7 @@ public class PopupMenusPatch
 		NewMissionMapButton[] mapButtons = __instance.mapButtons;
 		__instance.mapButtons = mapButtons.AddRangeToArray(newButtons.ToArray());
 		
-		Plugin.Log.LogInfo($"Added {newButtons.Count} new map buttons");
+		Plugin.Logger.LogInfo($"Added {newButtons.Count} new map buttons");
 	}
 
 	private static RectTransform SetupUI(Transform mapOptions)

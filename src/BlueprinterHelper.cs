@@ -3,89 +3,134 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using BepInEx.Bootstrap;
+using HarmonyLib;
 using UnityEngine;
 
 namespace NOMapLoader;
 
 public static class BlueprinterHelper
 {
-	private static bool checkComplete = false;
-	private static Type loaderType;
-	private static Type registryType;
-	private static object registryInstance;
-	private static object instance;
-	
-	public static bool IsLoaderActive()
-	{
-		return Plugin.BlueprinterLoaded;
-	}
+    private static bool initialized = false;
+    private static Type registryType;
+    private static object registryInstance;
+    private static bool patchingComplete = false;
 
-	public static bool IsPatchingComplete()
-	{
-		Setup();
-		var completeField = loaderType?.GetProperty("PatchingComplete", BindingFlags.Public | BindingFlags.Instance);
-		var complete = (bool)(completeField?.GetValue(instance) ?? false);
+    public static bool PatchingComplete
+    {
+        get
+        {
+            if (!initialized)
+                InitializeHarmonyHooks();
+            
+            return patchingComplete;
+        }
+    }
 
-		return complete;
-	}
-	
-	public static List<AssetBundle> GetExternalMapBundles()
-	{
-		List<AssetBundle> mapBundles = new List<AssetBundle>();
-		Setup(); // Ensures registryType and registryInstance are assigned
+    public static List<AssetBundle> GetExternalMapBundles()
+    {
+        List<AssetBundle> mapBundles = new List<AssetBundle>();
 
-		if (registryInstance == null) return mapBundles;
+        if (registryInstance == null) return mapBundles;
 
-		// 1. Get the BundlesByName dictionary field
-		var dictionaryField = registryType?.GetProperty("BundlesByName", BindingFlags.Public | BindingFlags.Instance);
-		var dictionaryObj = dictionaryField?.GetValue(registryInstance) as IDictionary;
+        var dictionaryField = registryType?.GetProperty("BundlesByName", BindingFlags.Public | BindingFlags.Instance);
+        var dictionaryObj = dictionaryField?.GetValue(registryInstance) as IDictionary;
 
-		if (dictionaryObj == null) return mapBundles;
+        if (dictionaryObj == null) return mapBundles;
 
-		// 2. Iterate through the dictionary (IDictionary lets us access Keys and Values)
-		foreach (DictionaryEntry entry in dictionaryObj)
-		{
-			string key = entry.Key as string;
+        foreach (DictionaryEntry entry in dictionaryObj)
+        {
+            string key = entry.Key as string;
+
+            if (key != null && key.Contains("map_"))
+            {
+                object loadedBundle = entry.Value;
+                if (loadedBundle == null) continue;
+
+                var bundleField = loadedBundle.GetType()
+                    .GetField("AssetBundle", BindingFlags.Public | BindingFlags.Instance);
+                var assetBundle = bundleField?.GetValue(loadedBundle) as AssetBundle;
+
+                if (assetBundle != null)
+                {
+                    mapBundles.Add(assetBundle);
+                }
+            }
+        }
+
+        return mapBundles;
+    }
+
+    private static void InitializeHarmonyHooks()
+    {
+        if (initialized)
+        {
+            return;
+        }
+
+        if (!Chainloader.PluginInfos.TryGetValue("com.nikkorap.blueprinter", out var pluginInfo) || pluginInfo?.Instance == null)
+        {
+            Plugin.DebugLog("Blueprinter instance not available yet");
+            return;
+        }
         
-			// Check if the bundle name contains "map_"
-			if (key != null && key.Contains("map_"))
-			{
-				object loadedBundle = entry.Value;
-				if (loadedBundle == null) continue;
+        Assembly blueprinterAssembly = pluginInfo.Instance.GetType().Assembly;
 
-				// 3. Extract the "AssetBundle" field from the LoadedBundle object
-				var bundleField = loadedBundle.GetType().GetField("AssetBundle", BindingFlags.Public | BindingFlags.Instance);
-				var assetBundle = bundleField?.GetValue(loadedBundle) as AssetBundle;
+        Harmony harmony = new Harmony("com.minec.nomaploader.blueprinterhelper");
+        
+        bool patchedAny = false;
 
-				if (assetBundle != null)
-				{
-					mapBundles.Add(assetBundle);
-				}
-			}
-		}
+        Type loadingScreenType = blueprinterAssembly.GetType("Blueprinter.BlueprinterLoadingScreen");
 
-		return mapBundles;
-	}
+        if (loadingScreenType != null)
+        {
+            MethodInfo destroyInstanceMethod = loadingScreenType.GetMethod("DestroyInstance", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 
-	private static void Setup()
-	{
-		if (instance != null || checkComplete) return;
-		
-		if (Chainloader.PluginInfos.TryGetValue("com.nikkorap.blueprinter", out var pluginInfo))
-		{
-			instance = pluginInfo.Instance;
-			if (instance != null)
-			{
-				loaderType = instance.GetType();
-			}
-		}
-		
-		var registryField = loaderType?.GetField("bundleRegistry", BindingFlags.NonPublic | BindingFlags.Instance);
-		if (instance != null)
-		{
-			registryInstance = registryField?.GetValue(instance);
-		}
-		registryType = registryInstance?.GetType();
-		checkComplete = true;
-	}
+            if (destroyInstanceMethod != null)
+            {
+                MethodInfo postfix = typeof(BlueprinterHelper).GetMethod(nameof(PatchingCompleted), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                if (postfix != null)
+                {
+                    harmony.Patch(destroyInstanceMethod, postfix: new HarmonyMethod(postfix));
+                    patchedAny = true;
+                    Plugin.DebugLog("Successfully patched DestroyInstance");
+                }
+            }
+        }
+
+        Type issuePopupType = blueprinterAssembly.GetType("Blueprinter.BlueprinterIssuePopup");
+
+        if (issuePopupType != null)
+        {
+            MethodInfo showMethod = issuePopupType.GetMethod("Show", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+
+            if (showMethod != null)
+            {
+                MethodInfo postfix = typeof(BlueprinterHelper).GetMethod(nameof(PatchingCompleted), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                if (postfix != null)
+                {
+                    harmony.Patch(showMethod, postfix: new HarmonyMethod(postfix));
+                    patchedAny = true;
+                    Plugin.DebugLog("Successfully patched Show");
+                }
+            }
+        }
+        
+        var registryField = pluginInfo.Instance.GetType()?.GetField("bundleRegistry", BindingFlags.NonPublic | BindingFlags.Instance);
+        if (pluginInfo.Instance != null)
+        {
+            registryInstance = registryField?.GetValue(pluginInfo.Instance);
+        }
+        registryType = registryInstance?.GetType();
+        
+        initialized = patchedAny;
+    }
+        
+    private static void PatchingCompleted()
+    {
+        if (patchingComplete)
+            return;
+        
+        patchingComplete = true;
+        Plugin.DebugLog("Blueprinter patching completed");
+    }
 }

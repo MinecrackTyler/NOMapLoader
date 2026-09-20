@@ -22,7 +22,7 @@ public static class SceneSingletonPatch
 				};
 				mapSettingsManager.Maps = mapSettingsManager.Maps.AddToArray(mapData);
 			}
-			Plugin.Log.LogInfo($"Injected {Plugin.CustomMaps.Count} custom maps into MapSettingsManager");
+			Plugin.Logger.LogInfo($"Injected {Plugin.CustomMaps.Count} custom maps into MapSettingsManager");
 		}
 	}
 }
@@ -36,7 +36,7 @@ public static class MainMenuPatch
 		MapLoader mapLoader = Resources.Load<MapLoader>("MapLoader");
 		if (mapLoader == null)
 		{
-			Plugin.Log.LogError("No MapLoader found");
+			Plugin.Logger.LogError("No MapLoader found");
 			return;
 		}
 		foreach (var mapName in Plugin.CustomMaps.Keys)
@@ -44,6 +44,6 @@ public static class MainMenuPatch
 			CustomMapData customMapData = Plugin.CustomMaps[mapName];
 			mapLoader.Maps = mapLoader.Maps.AddToArray(customMapData.Details);
 		}
-		Plugin.Log.LogInfo($"Injected {Plugin.CustomMaps.Count} custom maps into MapLoader");
+		Plugin.Logger.LogInfo($"Injected {Plugin.CustomMaps.Count} custom maps into MapLoader");
 	}
 }
