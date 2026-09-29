@@ -44,6 +44,7 @@ public class Plugin : BaseUnityPlugin
         base.Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         if (Chainloader.PluginInfos.ContainsKey("com.nikkorap.blueprinter"))
         {
+            BlueprinterHelper.InitializeHarmonyHooks();
             Logger.LogInfo("Blueprinter detected, scanning for external bundles!");
             BlueprinterLoaded = true;
         }

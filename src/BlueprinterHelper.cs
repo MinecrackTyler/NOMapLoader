@@ -60,7 +60,7 @@ public static class BlueprinterHelper
         return mapBundles;
     }
 
-    private static void InitializeHarmonyHooks()
+    public static void InitializeHarmonyHooks()
     {
         if (initialized)
         {
