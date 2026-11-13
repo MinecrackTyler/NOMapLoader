@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>NOMapLoader</AssemblyName>
     <Description>Nuclear Option Map Loader</Description>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -43,6 +43,9 @@
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>$(GameManagedDir)\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="com.nikkorap.blueprinter">
+      <HintPath>$(BepInExPluginsDir)/../dev/Blueprinter_2.1.1.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

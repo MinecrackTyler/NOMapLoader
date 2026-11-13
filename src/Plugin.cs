@@ -44,7 +44,7 @@ public class Plugin : BaseUnityPlugin
         base.Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         if (Chainloader.PluginInfos.ContainsKey("com.nikkorap.blueprinter"))
         {
-            BlueprinterHelper.InitializeHarmonyHooks();
+            BlueprinterHelper.Initialize();
             Logger.LogInfo("Blueprinter detected, scanning for external bundles!");
             BlueprinterLoaded = true;
         }
@@ -53,6 +53,8 @@ public class Plugin : BaseUnityPlugin
             BlueprinterLoaded = false;
         }
         Harmony harmony = new Harmony(PluginInfo.PLUGIN_GUID);
+        BlueprinterHelper.Initialize();
+        harmony.PatchAll();
         
         await BuildMapTable();
 
@@ -71,29 +73,6 @@ public class Plugin : BaseUnityPlugin
             }
             Logger.LogInfo($"Injected {CustomMaps.Count} custom maps into MapLoader");
         }
-        
-        harmony.PatchAll();
-    }
-
-    private async Task<List<AssetBundle>> ScanExternalBundles()
-    {
-        List<AssetBundle> list = new List<AssetBundle>();
-        if (!BlueprinterLoaded) return list;
-        
-        Logger.LogInfo("Awaiting blueprinter patching!");
-        while (!BlueprinterHelper.PatchingComplete)
-        {
-            await Task.Delay(100);
-        }
-
-        foreach (AssetBundle bundle in BlueprinterHelper.GetExternalMapBundles())
-        {
-            Logger.LogInfo("Detected external bundle: " + bundle.name);
-            list.Add(bundle);
-        }
-
-        return list;
-
     }
 
     private async Task BuildMapTable()
@@ -118,44 +97,19 @@ public class Plugin : BaseUnityPlugin
         var excludeBundles = new List<string>();
         if (BlueprinterLoaded)
         {
+            while (!BlueprinterHelper.PatchingComplete)
+            {
+                await Task.Yield();
+            }
             excludeBundles = mapBundles.Where(f => Path.GetExtension(f).Contains("nobp")).ToList();
         }
         
-        
-        var externalBundles = await ScanExternalBundles();
+        var externalBundles = AssetBundle.GetAllLoadedAssetBundles().ToList();
         var localBundles = mapBundles.Except(excludeBundles).ToList();
         
         Logger.LogInfo($"Found {localBundles.Count + externalBundles.Count} map bundles");
         Logger.LogInfo($"Details: {externalBundles.Count} external bundles");
         Logger.LogInfo($"Details: {localBundles.Count} local bundles");
-
-        foreach (var detail in Resources.FindObjectsOfTypeAll<MapDetails>()) //load preloaded map details from blueprinter
-        {
-            if (PreloadedMaps.Contains(detail.PrefabName)) continue;
-            var mapPrefab = Resources.FindObjectsOfTypeAll<GameObject>().FirstOrDefault(x => x.name == detail.PrefabName);
-            
-            if (mapPrefab == null)
-            {
-                Logger.LogError($"Failed to load map prefab: {detail.PrefabName}");
-                continue;
-            }
-            MapSettings settings = mapPrefab.GetComponent<MapSettings>();
-            if (settings == null)
-            {
-                Logger.LogError($"Failed to load map settings: {detail.PrefabName}");
-                continue;
-            }
-            
-            CustomMapData mapData = new CustomMapData
-            {
-                Details = detail,
-                Settings = settings,
-                Prefab = mapPrefab
-            };
-                
-            CustomMaps[detail.PrefabName] = mapData;
-        }
-        
         
         foreach (var bundleFile in localBundles)
         {
@@ -197,6 +151,75 @@ public class Plugin : BaseUnityPlugin
                 CustomMaps[mapDetail.PrefabName] = mapData;
             }
             bundle.Unload(false);
+        }
+        
+        
+        foreach (var bundle in externalBundles)
+        {
+            var fileName = bundle.name;
+            Logger.LogInfo($"Attempting to load map bundle: {fileName}");
+            
+            if (bundle == null)
+            {
+                Logger.LogError($"Failed to load map bundle: {fileName}");
+                continue;
+            }
+            
+            var mapDetails = bundle.LoadAllAssets<MapDetails>().ToList();
+
+            foreach (var mapDetail in mapDetails)
+            {
+                GameObject mapPrefab = bundle.LoadAsset<GameObject>(mapDetail.PrefabName);
+
+                if (mapPrefab == null)
+                {
+                    Logger.LogError($"Failed to load map prefab: {mapDetail.PrefabName}");
+                    continue;
+                }
+                MapSettings settings = mapPrefab.GetComponent<MapSettings>();
+                if (settings == null)
+                {
+                    Logger.LogError($"Failed to load map settings: {mapDetail.PrefabName}");
+                    continue;
+                }
+                
+                CustomMapData mapData = new CustomMapData
+                {
+                    Details = mapDetail,
+                    Settings = settings,
+                    Prefab = mapPrefab
+                };
+                
+                CustomMaps[mapDetail.PrefabName] = mapData;
+            }
+            bundle.Unload(false);
+        }
+        
+        foreach (var detail in Resources.FindObjectsOfTypeAll<MapDetails>()) //if anything is missed or loaded some other method somehow
+        {
+            if (PreloadedMaps.Contains(detail.PrefabName)) continue;
+            var mapPrefab = Resources.FindObjectsOfTypeAll<GameObject>().FirstOrDefault(x => x.name == detail.PrefabName);
+            
+            if (mapPrefab == null)
+            {
+                Logger.LogError($"Failed to load map prefab: {detail.PrefabName}");
+                continue;
+            }
+            MapSettings settings = mapPrefab.GetComponent<MapSettings>();
+            if (settings == null)
+            {
+                Logger.LogError($"Failed to load map settings: {detail.PrefabName}");
+                continue;
+            }
+            
+            CustomMapData mapData = new CustomMapData
+            {
+                Details = detail,
+                Settings = settings,
+                Prefab = mapPrefab
+            };
+                
+            CustomMaps[detail.PrefabName] = mapData;
         }
     }
 }

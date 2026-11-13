@@ -32,7 +32,7 @@ public static class MainMenuPatch
 {
 	static void Postfix()
 	{
-		if (Plugin.BlueprinterLoaded)  return; //delegate to later load.
+		if (Plugin.BlueprinterLoaded)  return; //wait
 		MapLoader mapLoader = Resources.Load<MapLoader>("MapLoader");
 		if (mapLoader == null)
 		{
