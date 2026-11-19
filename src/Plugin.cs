@@ -150,7 +150,7 @@ public class Plugin : BaseUnityPlugin
                 
                 CustomMaps[mapDetail.PrefabName] = mapData;
             }
-            bundle.Unload(false);
+            //bundle.Unload(false);
         }
         
         
@@ -192,7 +192,7 @@ public class Plugin : BaseUnityPlugin
                 
                 CustomMaps[mapDetail.PrefabName] = mapData;
             }
-            bundle.Unload(false);
+            //bundle.Unload(false);
         }
         
         foreach (var detail in Resources.FindObjectsOfTypeAll<MapDetails>()) //if anything is missed or loaded some other method somehow
